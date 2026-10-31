@@ -225,7 +225,7 @@
           </div>
           <section class="card full-list-card">
             <div class="list-toolbar">
-              <div><h2>All clients <span class="result-count" id="client-result-count">0</span></h2><p>Demo records only</p></div>
+              <div><h2>All clients <span class="result-count" id="client-result-count">0</span></h2><p>Shared agency records</p></div>
               <label class="search-box">
                 <span aria-hidden="true">⌕</span>
                 <input id="client-search" type="search" placeholder="Search clients..." autocomplete="off" />
@@ -284,6 +284,12 @@
                 <option>Life insurance</option><option>Health insurance</option><option>Auto insurance</option><option>Home insurance</option><option>Business insurance</option><option>Other</option>
               </select>
             </label>
+            <label class="field">Insurer <span>*</span>
+              <select name="insurer" required>
+                <option>HDFC ERGO</option><option>ICICI Lombard</option><option>STAR</option><option>Aditya Birla</option><option>Care</option><option>Tata AIG</option><option>Tata AIA</option><option>Axis Maxlife</option><option>Others</option>
+              </select>
+            </label>
+            <label class="field field-wide">Policy name <span>*</span><input name="policyName" required maxlength="160" placeholder="e.g. Health Guard" /></label>
             <label class="field">Policy reference<input name="policyNumber" maxlength="40" placeholder="e.g. DEMO-1042" /></label>
             <label class="field">Policy status
               <select name="policyStatus">

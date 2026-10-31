@@ -132,7 +132,7 @@ async function loadWorkspace(user) {
 async function loadClients() {
   const { data, error } = await supabase
     .from("clients")
-    .select("id, full_name, email, phone, notes, created_at, updated_at, policies(id, policy_type, policy_reference, status, annual_premium, renewal_date)")
+    .select("id, full_name, email, phone, notes, created_at, updated_at, policies(id, policy_type, insurer, policy_name, policy_reference, status, annual_premium, renewal_date)")
     .order("full_name", { ascending: true });
   if (error) throw error;
   clients.splice(0, clients.length, ...(data || []));
@@ -164,7 +164,7 @@ function policyMarkup(client) {
   const policies = getPolicies(client);
   if (!policies.length) return '<span class="policy-name">No policy details</span>';
   const summary = policies.slice(0, 2).map((policy) =>
-    `<span class="policy-name">${safeText(policy.policy_type)}</span><span class="policy-ref">${safeText(policy.policy_reference || "No reference")}</span>`,
+    `<span class="policy-name">${safeText(policy.policy_name)} · ${safeText(policy.insurer)}</span><span class="policy-ref">${safeText(policy.policy_type)} · ${safeText(policy.policy_reference || "No reference")}</span>`,
   ).join("");
   return summary + (policies.length > 2 ? `<span class="policy-ref">+${policies.length - 2} more</span>` : "");
 }
@@ -218,14 +218,14 @@ function renewalRowMarkup(item, full = false) {
   if (!full) {
     return `<div class="renewal-row">
       <span class="date-tile"><strong>${day}</strong><span>${month}</span></span>
-      <span class="renewal-copy"><strong>${safeText(item.full_name)}</strong><span>${safeText(policy.policy_type)} · ${safeText(policy.policy_reference || "No reference")}</span></span>
+      <span class="renewal-copy"><strong>${safeText(item.full_name)}</strong><span>${safeText(policy.policy_name)} · ${safeText(policy.insurer)}</span></span>
       <span class="renewal-days">${timing}</span>
     </div>`;
   }
   return `<article class="renewal-full-row">
     <span class="date-tile"><strong>${day}</strong><span>${month}</span></span>
     <span class="renewal-client"><strong>${safeText(item.full_name)}</strong><span>${safeText(item.email || "No email provided")}</span></span>
-    <span class="renewal-product"><strong>${safeText(policy.policy_type)}</strong><span>${safeText(policy.policy_reference || "No reference")}</span></span>
+    <span class="renewal-product"><strong>${safeText(policy.policy_name)}</strong><span>${safeText(policy.insurer)} · ${safeText(policy.policy_type)}</span></span>
     <span class="renewal-days">${timing} · ${formatDate(policy.renewal_date, { month: "short", day: "numeric" })}</span>
     <span class="row-actions"><button class="row-action" type="button" data-email="${safeText(item.id)}">Email draft</button><button class="row-action" type="button" data-calendar="${safeText(item.id)}">Calendar</button></span>
   </article>`;
@@ -261,7 +261,7 @@ function filterClients(query) {
   const normalized = query.trim().toLowerCase();
   const filtered = clients.filter((client) => {
     const policyText = getPolicies(client).map((policy) =>
-      `${policy.policy_type} ${policy.policy_reference || ""}`).join(" ");
+      `${policy.policy_type} ${policy.insurer} ${policy.policy_name} ${policy.policy_reference || ""}`).join(" ");
     return [client.full_name, client.email, client.phone, client.notes, policyText]
       .some((value) => String(value || "").toLowerCase().includes(normalized));
   });
@@ -295,6 +295,8 @@ function openModal(client = null) {
   form.elements.notes.value = client?.notes || "";
   const policy = client ? primaryPolicy(client) : null;
   form.elements.policyType.value = policy?.policy_type || "Life insurance";
+  form.elements.insurer.value = policy?.insurer || "Others";
+  form.elements.policyName.value = policy?.policy_name || "";
   form.elements.policyNumber.value = policy?.policy_reference || "";
   form.elements.policyStatus.value = policy?.status || "active";
   form.elements.premium.value = policy?.annual_premium ?? "";
@@ -331,7 +333,7 @@ function downloadCalendar(items) {
       `DTSTART;VALUE=DATE:${dateStamp}`,
       `DTEND;VALUE=DATE:${end}`,
       `SUMMARY:${escapeCalendarText(`Policy renewal: ${item.full_name}`)}`,
-      `DESCRIPTION:${escapeCalendarText(`${item.policy.policy_type} renewal follow-up. Reference: ${item.policy.policy_reference || "not provided"}.`)}`,
+      `DESCRIPTION:${escapeCalendarText(`${item.policy.insurer} ${item.policy.policy_name} renewal follow-up. Reference: ${item.policy.policy_reference || "not provided"}.`)}`,
       "END:VEVENT",
     ];
   });
@@ -353,9 +355,9 @@ function emailClient(client) {
     return;
   }
   const policy = primaryPolicy(client);
-  const subject = `A quick note about your ${policy?.policy_type?.toLowerCase() || "insurance policy"}`;
+  const subject = `A quick note about your ${policy?.policy_name || "insurance policy"}`;
   const renewal = policy?.renewal_date ? formatDate(policy.renewal_date) : "upcoming policy date";
-  const body = `Hi ${client.full_name.split(" ")[0]},\r\n\r\nI wanted to get in touch about your policy renewal on ${renewal}. Let me know a convenient time to talk.\r\n\r\nBest,`;
+  const body = `Hi ${client.full_name.split(" ")[0]},\r\n\r\nI wanted to get in touch about your ${policy?.insurer || ""} ${policy?.policy_name || "insurance policy"} renewal on ${renewal}. Let me know a convenient time to talk.\r\n\r\nBest,`;
   window.location.href = `mailto:${encodeURIComponent(client.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
@@ -431,6 +433,8 @@ function formValues(form) {
     p_phone: String(values.get("phone") || "").trim() || null,
     p_notes: String(values.get("notes") || "").trim() || null,
     p_policy_type: String(values.get("policyType") || "Other"),
+    p_insurer: String(values.get("insurer") || "Others"),
+    p_policy_name: String(values.get("policyName") || "").trim(),
     p_policy_reference: String(values.get("policyNumber") || "").trim() || null,
     p_policy_status: String(values.get("policyStatus") || "active"),
     p_annual_premium: premiumValue ? Number(premiumValue) : null,
@@ -449,17 +453,12 @@ async function saveClient(event) {
   }
   submit.disabled = true;
   try {
-    const clientId = form.dataset.clientId;
-    if (clientId) {
-      const { error } = await supabase.rpc("update_client_with_policy", {
-        ...payload,
-        p_client_id: clientId,
-      });
-      if (error) throw error;
-    } else {
-      const { error } = await supabase.rpc("create_client_with_policy", payload);
-      if (error) throw error;
-    }
+    const clientId = form.dataset.clientId || null;
+    const { error } = await supabase.rpc("save_client_with_policy", {
+      ...payload,
+      p_client_id: clientId,
+    });
+    if (error) throw error;
     closeModal();
     await loadClients();
     announce(clientId ? "Client details updated." : "Client added to your workspace.");

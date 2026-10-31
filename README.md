@@ -8,12 +8,14 @@ Coverdesk is a Vercel-hosted client and policy workspace backed by Supabase Auth
 2. Copy `.env.example` to `.env.local`.
 3. Set `VITE_SUPABASE_URL` to your project root URL (not the `/rest/v1/` API endpoint).
 4. Set `VITE_SUPABASE_PUBLISHABLE_KEY` to the project's publishable key. A legacy `anon` key is also supported. Never use a `service_role` or secret key in this app.
-5. Apply `supabase/migrations/202611010001_initial_schema.sql` in the Supabase SQL Editor.
+5. Apply the SQL migrations in order in the Supabase SQL Editor:
+   - `supabase/migrations/202611010001_initial_schema.sql`
+   - `supabase/migrations/202611010002_policy_insurer_and_name.sql`
 6. Create the first user from Supabase Authentication, then add that user as the workspace owner by running the SQL below with their Auth user UUID:
 
    ```sql
    insert into public.workspace_members (workspace_id, user_id, role)
-   select id, 'AUTH-USER-UUID'::uuid, 'owner'
+   select id, 'AUTH-USER-UUID'::47ce2c09-b226-4c36-a9a0-3e7afaca839d, 'owner'
    from public.workspaces
    where slug = 'agency'
    on conflict (workspace_id, user_id) do update set role = 'owner';
@@ -25,7 +27,7 @@ Coverdesk is a Vercel-hosted client and policy workspace backed by Supabase Auth
 
 The local `.env.local` is ignored by Git and must never be committed. Set the same two variables in Vercel's project environment-variable settings before deploying.
 
-The migration creates a single `agency` workspace with RLS enabled on all application tables. Adding an invited user to the Auth project alone does **not** grant workspace access; the user must also have a `workspace_members` row.
+The migrations create a single `agency` workspace with RLS enabled on all application tables, and add insurer and policy name fields. Existing policies are backfilled with insurer `Others` and policy name `Not specified`; edit those values as needed. Adding an invited user to the Auth project alone does **not** grant workspace access; the user must also have a `workspace_members` row.
 
 ## Vercel deployment
 
