@@ -1,0 +1,307 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#f6f7fb" />
+    <meta
+      name="description"
+      content="A private workspace for managing insurance clients, policies, and renewals."
+    />
+    <title>Coverdesk — Insurance workspace</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/styles.css" />
+    <script type="module" src="/src/main.js"></script>
+  </head>
+  <body>
+    <main class="auth-screen" id="auth-screen">
+      <a class="brand auth-brand" href="#" aria-label="Coverdesk home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" fill="none">
+            <path d="M16 3.5 27 8v7.1c0 6.4-4.5 11.4-11 13.4C9.5 26.5 5 21.5 5 15.1V8l11-4.5Z" fill="currentColor" />
+            <path d="m11.3 15.8 3.1 3.1 6.5-6.7" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </span>
+        <span>coverdesk</span>
+      </a>
+      <section class="auth-card" aria-labelledby="auth-title">
+        <div class="auth-card-mark" aria-hidden="true">✦</div>
+        <p class="eyebrow">YOUR AGENCY WORKSPACE</p>
+        <h1 id="auth-title">Welcome back</h1>
+        <p class="auth-subtitle">Sign in to securely manage your client book.</p>
+        <div class="auth-message" id="auth-message" role="alert" hidden></div>
+        <form id="login-form">
+          <label class="field">Email address<input name="email" type="email" required autocomplete="username" maxlength="254" placeholder="you@agency.com" /></label>
+          <label class="field">Password<input name="password" type="password" required autocomplete="current-password" minlength="8" maxlength="128" placeholder="Enter your password" /></label>
+          <button class="auth-submit" type="submit">Sign in <span aria-hidden="true">→</span></button>
+        </form>
+        <form id="reset-form" hidden>
+          <p class="auth-subtitle">We’ll email you a secure password reset link.</p>
+          <label class="field">Email address<input name="email" type="email" required autocomplete="email" maxlength="254" placeholder="you@agency.com" /></label>
+          <button class="auth-submit" type="submit">Send reset link <span aria-hidden="true">→</span></button>
+        </form>
+        <form id="password-update-form" hidden>
+          <p class="auth-subtitle">Choose a new password for your account.</p>
+          <label class="field">New password<input name="password" type="password" required autocomplete="new-password" minlength="12" maxlength="128" placeholder="At least 12 characters" /></label>
+          <button class="auth-submit" type="submit">Update password <span aria-hidden="true">→</span></button>
+        </form>
+        <button class="auth-link" id="forgot-password" type="button">Forgot password?</button>
+        <p class="auth-footnote">Access is invite-only. Ask your workspace owner to invite you.</p>
+      </section>
+      <p class="auth-legal">Keep client information private. Sign out when you’re done.</p>
+    </main>
+    <div class="app-shell" id="app-shell" hidden>
+      <aside class="sidebar" aria-label="Main navigation">
+        <a class="brand" href="#" aria-label="Coverdesk home">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 32 32" fill="none">
+              <path d="M16 3.5 27 8v7.1c0 6.4-4.5 11.4-11 13.4C9.5 26.5 5 21.5 5 15.1V8l11-4.5Z" fill="currentColor" />
+              <path d="m11.3 15.8 3.1 3.1 6.5-6.7" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
+          </span>
+          <span>coverdesk</span>
+        </a>
+
+        <div class="workspace-label">WORKSPACE</div>
+        <nav class="nav-list">
+          <button class="nav-item active" type="button" data-view="dashboard">
+            <span class="nav-icon" aria-hidden="true">⌂</span>
+            <span>Overview</span>
+          </button>
+          <button class="nav-item" type="button" data-view="clients">
+            <span class="nav-icon" aria-hidden="true">♙</span>
+            <span>Clients</span>
+            <span class="nav-count" id="client-nav-count">0</span>
+          </button>
+          <button class="nav-item" type="button" data-view="renewals">
+            <span class="nav-icon" aria-hidden="true">◷</span>
+            <span>Renewals</span>
+            <span class="nav-dot" aria-label="Upcoming renewals"></span>
+          </button>
+        </nav>
+
+        <div class="sidebar-spacer"></div>
+        <div class="sidebar-help">
+          <div class="help-icon" aria-hidden="true">?</div>
+          <div>
+            <strong>Agency workspace</strong>
+            <span>Shared client records</span>
+          </div>
+        </div>
+        <div class="profile">
+          <div class="avatar avatar-agent">AR</div>
+          <div class="profile-copy">
+            <strong>Workspace member</strong>
+            <span>Independent agent</span>
+          </div>
+          <span class="profile-menu" aria-hidden="true">•••</span>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <div class="breadcrumb"><span>Workspace</span><span class="crumb-slash">/</span><strong id="breadcrumb-current">Overview</strong></div>
+          <div class="topbar-actions">
+            <span class="demo-pill"><span class="demo-dot"></span> SECURE WORKSPACE</span>
+            <button class="icon-button" id="help-button" type="button" aria-label="About your data" title="About your data">
+              <span aria-hidden="true">?</span>
+            </button>
+            <button class="sign-out-button" id="sign-out" type="button">Sign out</button>
+            <div class="avatar avatar-agent top-avatar" id="user-avatar" aria-label="Signed-in user">U</div>
+          </div>
+        </header>
+
+        <div class="demo-notice" role="note">
+          <span class="notice-symbol" aria-hidden="true">i</span>
+          <p><strong>Private agency workspace.</strong> Client and policy records are visible to authorized members of your agency.</p>
+          <button class="notice-dismiss" id="dismiss-notice" type="button" aria-label="Dismiss demo notice">×</button>
+        </div>
+
+        <section class="view-panel active" id="dashboard-view" aria-labelledby="page-title">
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow" id="today-label">YOUR WORKSPACE</p>
+              <h1 id="page-title">Good morning, Alex <span class="wave" aria-hidden="true">✦</span></h1>
+              <p class="page-subtitle">Here’s what’s happening with your clients today.</p>
+            </div>
+            <button class="button button-primary" type="button" data-open-client>
+              <span class="button-plus" aria-hidden="true">+</span> Add a client
+            </button>
+          </div>
+
+          <div class="stats-grid">
+            <article class="stat-card">
+              <div class="stat-top"><span>Total clients</span><span class="stat-icon blue-icon" aria-hidden="true">♙</span></div>
+              <div class="stat-number" id="total-clients">0</div>
+              <div class="stat-foot"><span class="stat-note">Across all your policies</span></div>
+            </article>
+            <article class="stat-card">
+              <div class="stat-top"><span>Active policies</span><span class="stat-icon green-icon" aria-hidden="true">✓</span></div>
+              <div class="stat-number" id="active-policies">0</div>
+              <div class="stat-foot"><span class="status-dot green-dot"></span><span class="stat-note">Currently in force</span></div>
+            </article>
+            <article class="stat-card">
+              <div class="stat-top"><span>Renewals coming up</span><span class="stat-icon amber-icon" aria-hidden="true">◷</span></div>
+              <div class="stat-number" id="upcoming-renewals">0</div>
+              <div class="stat-foot"><span class="status-dot amber-dot"></span><span class="stat-note">Within the next 30 days</span></div>
+            </article>
+            <article class="stat-card">
+              <div class="stat-top"><span>Follow-ups due</span><span class="stat-icon violet-icon" aria-hidden="true">↗</span></div>
+              <div class="stat-number" id="follow-ups">0</div>
+              <div class="stat-foot"><span class="stat-note">A little nudge goes a long way</span></div>
+            </article>
+          </div>
+
+          <div class="content-grid">
+            <section class="card renewals-card">
+              <div class="card-heading">
+                <div>
+                  <h2>Coming up</h2>
+                  <p>Your next renewal reminders</p>
+                </div>
+                <button class="text-button" type="button" data-view-link="renewals">View all <span aria-hidden="true">→</span></button>
+              </div>
+              <div class="renewal-list" id="dashboard-renewals"></div>
+            </section>
+
+            <section class="card activity-card">
+              <div class="card-heading">
+                <div>
+                  <h2>Quick actions</h2>
+                  <p>Keep your day moving</p>
+                </div>
+                <span class="sparkle" aria-hidden="true">✦</span>
+              </div>
+              <button class="quick-action" type="button" data-open-client>
+                <span class="quick-icon quick-blue" aria-hidden="true">＋</span>
+                <span><strong>Add a new client</strong><small>Start a client record</small></span>
+                <span class="quick-arrow" aria-hidden="true">→</span>
+              </button>
+              <button class="quick-action" type="button" data-view-link="renewals">
+                <span class="quick-icon quick-amber" aria-hidden="true">◷</span>
+                <span><strong>Review renewals</strong><small>See upcoming policy dates</small></span>
+                <span class="quick-arrow" aria-hidden="true">→</span>
+              </button>
+              <div class="integration-hint">
+                <span class="integration-icon" aria-hidden="true">✉</span>
+                <p>Email opens a draft in your mail app. Calendar reminders download for import; no external account is connected.</p>
+              </div>
+            </section>
+          </div>
+
+          <section class="card clients-card">
+            <div class="card-heading clients-heading">
+              <div>
+                <h2>Recent clients</h2>
+                <p>A quick look at your client book</p>
+              </div>
+              <button class="text-button" type="button" data-view-link="clients">All clients <span aria-hidden="true">→</span></button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>CLIENT</th><th>POLICY</th><th>STATUS</th><th>NEXT RENEWAL</th><th></th></tr>
+                </thead>
+                <tbody id="recent-clients"></tbody>
+              </table>
+            </div>
+          </section>
+              <footer class="page-footer">Made for thoughtful client care <span aria-hidden="true">✦</span></footer>
+        </section>
+
+        <section class="view-panel" id="clients-view" aria-labelledby="clients-title" hidden>
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">YOUR RELATIONSHIPS</p>
+              <h1 id="clients-title">Clients</h1>
+              <p class="page-subtitle">Keep client and policy details together.</p>
+            </div>
+            <button class="button button-primary" type="button" data-open-client><span class="button-plus" aria-hidden="true">+</span> Add a client</button>
+          </div>
+          <section class="card full-list-card">
+            <div class="list-toolbar">
+              <div><h2>All clients <span class="result-count" id="client-result-count">0</span></h2><p>Demo records only</p></div>
+              <label class="search-box">
+                <span aria-hidden="true">⌕</span>
+                <input id="client-search" type="search" placeholder="Search clients..." autocomplete="off" />
+              </label>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>CLIENT</th><th>CONTACT</th><th>POLICY</th><th>STATUS</th><th>NEXT RENEWAL</th><th></th></tr>
+                </thead>
+                <tbody id="all-clients"></tbody>
+              </table>
+            </div>
+            <p class="empty-state" id="no-search-results" hidden>No clients match your search.</p>
+          </section>
+        </section>
+
+        <section class="view-panel" id="renewals-view" aria-labelledby="renewals-title" hidden>
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">STAY A STEP AHEAD</p>
+              <h1 id="renewals-title">Renewals</h1>
+              <p class="page-subtitle">Upcoming policy dates and helpful follow-ups.</p>
+            </div>
+            <button class="button button-secondary" id="calendar-all-button" type="button"><span aria-hidden="true">＋</span> Add reminders to calendar</button>
+          </div>
+          <section class="card full-list-card">
+            <div class="list-toolbar renewal-toolbar">
+              <div><h2>Upcoming renewals <span class="result-count" id="renewal-result-count">0</span></h2><p>Sorted by renewal date</p></div>
+              <span class="legend"><span class="status-dot amber-dot"></span> Next 30 days</span>
+            </div>
+            <div class="renewal-full-list" id="all-renewals"></div>
+            <p class="empty-state" id="no-renewals" hidden>No upcoming renewals.</p>
+          </section>
+        </section>
+      </main>
+    </div>
+
+    <div class="modal-backdrop" id="client-modal" hidden>
+      <section class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <div class="modal-heading">
+          <div>
+            <p class="eyebrow">CLIENT RECORD</p>
+            <h2 id="modal-title">Add a client</h2>
+          </div>
+          <button class="icon-button modal-close" type="button" data-close-modal aria-label="Close dialog">×</button>
+        </div>
+        <p class="modal-notice">Client details are shared with authorized members of your agency workspace.</p>
+        <form id="client-form">
+          <div class="form-grid">
+            <label class="field field-wide">Client name <span>*</span><input name="name" required maxlength="80" placeholder="e.g. Taylor Morgan" /></label>
+            <label class="field">Email address<input name="email" type="email" maxlength="120" placeholder="taylor@example.com" /></label>
+            <label class="field">Phone number<input name="phone" type="tel" maxlength="30" placeholder="+1 (555) 000-0000" /></label>
+            <label class="field">Policy type
+              <select name="policyType">
+                <option>Life insurance</option><option>Health insurance</option><option>Auto insurance</option><option>Home insurance</option><option>Business insurance</option><option>Other</option>
+              </select>
+            </label>
+            <label class="field">Policy reference<input name="policyNumber" maxlength="40" placeholder="e.g. DEMO-1042" /></label>
+            <label class="field">Policy status
+              <select name="policyStatus">
+                <option value="active">Active</option><option value="pending">Pending</option><option value="expired">Expired</option><option value="cancelled">Cancelled</option>
+              </select>
+            </label>
+            <label class="field">Annual premium<input name="premium" type="number" min="0" max="100000000" step="0.01" placeholder="Optional" /></label>
+            <label class="field field-wide">Next renewal date<input name="renewalDate" type="date" /></label>
+            <label class="field field-wide">Notes<textarea name="notes" rows="3" maxlength="4000" placeholder="Optional notes"></textarea></label>
+          </div>
+          <div class="modal-actions">
+            <button class="button button-secondary" type="button" data-close-modal>Cancel</button>
+            <button class="button button-primary" type="submit">Save client</button>
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  </body>
+</html>
