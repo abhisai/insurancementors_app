@@ -1,6 +1,6 @@
-# Coverdesk
+# PolicyDairy
 
-Coverdesk is a Vercel-hosted client and policy workspace backed by Supabase Auth and Postgres. The browser uses only the Supabase publishable (or legacy `anon`) key; database row-level security restricts access to members of the shared agency workspace.
+PolicyDairy is a Vercel-hosted client and policy workspace backed by Supabase Auth and Postgres. The browser uses only the Supabase publishable (or legacy `anon`) key; database row-level security restricts access to members of the shared agency workspace.
 
 ## Local development
 

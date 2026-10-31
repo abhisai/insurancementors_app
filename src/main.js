@@ -23,6 +23,13 @@ function dateValue(value) {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
+function localDateInputValue(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 function formatDate(value, options = { month: "short", day: "numeric", year: "numeric" }) {
   const date = dateValue(value);
   return date ? new Intl.DateTimeFormat(undefined, options).format(date) : "Not set";
@@ -298,8 +305,9 @@ function openModal(client = null) {
   form.elements.insurer.value = policy?.insurer || "Others";
   form.elements.policyName.value = policy?.policy_name || "";
   form.elements.applicationType.value = policy?.application_type || "New";
-  form.elements.appliedDate.value = policy?.applied_date || "";
-  form.elements.inceptionDate.value = policy?.inception_date || "";
+  const today = localDateInputValue();
+  form.elements.appliedDate.value = policy?.applied_date || today;
+  form.elements.inceptionDate.value = policy?.inception_date || today;
   form.elements.policyNumber.value = policy?.policy_reference || "";
   form.elements.policyStatus.value = policy?.status || "active";
   form.elements.premium.value = policy?.annual_premium ?? "";
@@ -340,11 +348,11 @@ function downloadCalendar(items) {
       "END:VEVENT",
     ];
   });
-  const body = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Coverdesk//Workspace//EN", "CALSCALE:GREGORIAN", ...events, "END:VCALENDAR", ""].join("\r\n");
+  const body = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//PolicyDairy//Workspace//EN", "CALSCALE:GREGORIAN", ...events, "END:VCALENDAR", ""].join("\r\n");
   const url = URL.createObjectURL(new Blob([body], { type: "text/calendar;charset=utf-8" }));
   const link = document.createElement("a");
   link.href = url;
-  link.download = "coverdesk-renewals.ics";
+  link.download = "policydairy-renewals.ics";
   document.body.append(link);
   link.click();
   link.remove();
