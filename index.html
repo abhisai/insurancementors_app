@@ -290,7 +290,14 @@
               </select>
             </label>
             <label class="field field-wide">Policy name <span>*</span><input name="policyName" required maxlength="160" placeholder="e.g. Health Guard" /></label>
+            <label class="field">Type
+              <select name="applicationType" required>
+                <option value="New">New</option><option value="Port">Port</option>
+              </select>
+            </label>
             <label class="field">Policy reference<input name="policyNumber" maxlength="40" placeholder="e.g. DEMO-1042" /></label>
+            <label class="field">Applied date<input name="appliedDate" type="date" /></label>
+            <label class="field">Inception date<input name="inceptionDate" type="date" /></label>
             <label class="field">Policy status
               <select name="policyStatus">
                 <option value="active">Active</option><option value="pending">Pending</option><option value="expired">Expired</option><option value="cancelled">Cancelled</option>

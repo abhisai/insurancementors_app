@@ -132,7 +132,7 @@ async function loadWorkspace(user) {
 async function loadClients() {
   const { data, error } = await supabase
     .from("clients")
-    .select("id, full_name, email, phone, notes, created_at, updated_at, policies(id, policy_type, insurer, policy_name, policy_reference, status, annual_premium, renewal_date)")
+    .select("id, full_name, email, phone, notes, created_at, updated_at, policies(id, policy_type, insurer, policy_name, application_type, applied_date, inception_date, policy_reference, status, annual_premium, renewal_date)")
     .order("full_name", { ascending: true });
   if (error) throw error;
   clients.splice(0, clients.length, ...(data || []));
@@ -164,7 +164,7 @@ function policyMarkup(client) {
   const policies = getPolicies(client);
   if (!policies.length) return '<span class="policy-name">No policy details</span>';
   const summary = policies.slice(0, 2).map((policy) =>
-    `<span class="policy-name">${safeText(policy.policy_name)} · ${safeText(policy.insurer)}</span><span class="policy-ref">${safeText(policy.policy_type)} · ${safeText(policy.policy_reference || "No reference")}</span>`,
+    `<span class="policy-name">${safeText(policy.policy_name)} · ${safeText(policy.insurer)}</span><span class="policy-ref">${safeText(policy.application_type)} · ${safeText(policy.policy_type)} · ${safeText(policy.policy_reference || "No reference")}</span><span class="policy-ref">Applied ${formatDate(policy.applied_date)} · Inception ${formatDate(policy.inception_date)}</span>`,
   ).join("");
   return summary + (policies.length > 2 ? `<span class="policy-ref">+${policies.length - 2} more</span>` : "");
 }
@@ -261,7 +261,7 @@ function filterClients(query) {
   const normalized = query.trim().toLowerCase();
   const filtered = clients.filter((client) => {
     const policyText = getPolicies(client).map((policy) =>
-      `${policy.policy_type} ${policy.insurer} ${policy.policy_name} ${policy.policy_reference || ""}`).join(" ");
+      `${policy.policy_type} ${policy.insurer} ${policy.policy_name} ${policy.application_type} ${policy.policy_reference || ""}`).join(" ");
     return [client.full_name, client.email, client.phone, client.notes, policyText]
       .some((value) => String(value || "").toLowerCase().includes(normalized));
   });
@@ -297,6 +297,9 @@ function openModal(client = null) {
   form.elements.policyType.value = policy?.policy_type || "Life insurance";
   form.elements.insurer.value = policy?.insurer || "Others";
   form.elements.policyName.value = policy?.policy_name || "";
+  form.elements.applicationType.value = policy?.application_type || "New";
+  form.elements.appliedDate.value = policy?.applied_date || "";
+  form.elements.inceptionDate.value = policy?.inception_date || "";
   form.elements.policyNumber.value = policy?.policy_reference || "";
   form.elements.policyStatus.value = policy?.status || "active";
   form.elements.premium.value = policy?.annual_premium ?? "";
@@ -435,6 +438,9 @@ function formValues(form) {
     p_policy_type: String(values.get("policyType") || "Other"),
     p_insurer: String(values.get("insurer") || "Others"),
     p_policy_name: String(values.get("policyName") || "").trim(),
+    p_application_type: String(values.get("applicationType") || "New"),
+    p_applied_date: String(values.get("appliedDate") || "") || null,
+    p_inception_date: String(values.get("inceptionDate") || "") || null,
     p_policy_reference: String(values.get("policyNumber") || "").trim() || null,
     p_policy_status: String(values.get("policyStatus") || "active"),
     p_annual_premium: premiumValue ? Number(premiumValue) : null,
