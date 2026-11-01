@@ -166,7 +166,7 @@ async function loadClients() {
 async function loadLeads() {
   const { data, error } = await supabase
     .from("leads")
-    .select("id, full_name, email, phone, date_of_birth, insurer, policy_name, notes, follow_up_date, created_at, updated_at")
+    .select("id, full_name, email, phone, date_of_birth, insurer, insurance_type, application_type, policy_name, notes, follow_up_date, created_at, updated_at")
     .order("follow_up_date", { ascending: true, nullsFirst: false })
     .order("full_name", { ascending: true });
   if (error) throw error;
@@ -289,7 +289,8 @@ function renderLeadRows(target, items) {
       <td><span class="client-person"><span class="client-avatar lavender">${safeText(initialsFor(lead.full_name))}</span><span class="client-name">${safeText(lead.full_name)}</span></span></td>
       <td>${safeText(lead.phone || "—")}${lead.email ? `<span class="client-sub">${safeText(lead.email)}</span>` : ""}</td>
       <td>${age === "" ? "—" : safeText(age)}<span class="client-sub">${formatDate(lead.date_of_birth, { month: "short", day: "numeric", year: "numeric" })}</span></td>
-      <td><span class="policy-name">${safeText(lead.insurer)}</span><span class="policy-ref">${safeText(lead.policy_name)}</span></td>
+      <td><span class="policy-name">${safeText(lead.insurer)}</span><span class="policy-ref">${safeText(lead.insurance_type)} insurance · ${safeText(lead.policy_name)}</span></td>
+      <td>${safeText(lead.application_type)}</td>
       <td><span class="${daysUntil(lead.follow_up_date) !== null && daysUntil(lead.follow_up_date) < 0 ? "lead-overdue" : ""}">${followUpLabel(lead.follow_up_date)}</span></td>
       <td><span class="row-actions">
         <button class="row-action" type="button" data-edit-lead="${safeText(lead.id)}">Edit</button>
@@ -346,7 +347,7 @@ function filterClients(query) {
 function filterLeads(query) {
   const normalized = query.trim().toLowerCase();
   const filtered = leads.filter((lead) =>
-    [lead.full_name, lead.email, lead.phone, lead.insurer, lead.policy_name, lead.notes, lead.date_of_birth, lead.follow_up_date]
+    [lead.full_name, lead.email, lead.phone, lead.insurer, lead.insurance_type, lead.application_type, lead.policy_name, lead.notes, lead.date_of_birth, lead.follow_up_date]
       .some((value) => String(value || "").toLowerCase().includes(normalized)));
   renderLeadRows(document.querySelector("#all-leads"), filtered);
   document.querySelector("#lead-result-count").textContent = filtered.length;
@@ -411,6 +412,8 @@ function openLeadModal(lead = null) {
   const age = ageFromDateOfBirth(lead?.date_of_birth);
   form.elements.age.value = age === "" ? "" : age;
   form.elements.insurer.value = lead?.insurer || "Others";
+  form.elements.insuranceType.value = lead?.insurance_type || "Health";
+  form.elements.applicationType.value = lead?.application_type || "New";
   form.elements.policyName.value = lead?.policy_name || "";
   form.elements.followUpDate.value = lead?.follow_up_date || "";
   form.elements.notes.value = lead?.notes || "";
@@ -481,7 +484,7 @@ function downloadLeadCalendar(lead) {
     id: lead.id,
     date: lead.follow_up_date,
     summary: `Lead follow-up: ${lead.full_name}`,
-    description: `${lead.insurer} ${lead.policy_name} follow-up.`,
+    description: `${lead.insurer} ${lead.insurance_type} insurance (${lead.application_type}) ${lead.policy_name} follow-up.`,
   })];
   downloadCalendarFile(events, "policydairy-lead-follow-up.ics", "Add a follow-up date to this lead first.");
 }
@@ -505,7 +508,7 @@ function emailLead(lead) {
   }
   const followUp = lead.follow_up_date ? formatDate(lead.follow_up_date) : "soon";
   const subject = `Following up about ${lead.policy_name}`;
-  const body = `Hi ${lead.full_name.split(" ")[0]},\r\n\r\nI wanted to follow up about ${lead.insurer} ${lead.policy_name}${lead.follow_up_date ? ` on ${followUp}` : ""}. Let me know a convenient time to talk.\r\n\r\nBest,`;
+  const body = `Hi ${lead.full_name.split(" ")[0]},\r\n\r\nI wanted to follow up about ${lead.insurer} ${lead.insurance_type} insurance (${lead.application_type}) ${lead.policy_name}${lead.follow_up_date ? ` on ${followUp}` : ""}. Let me know a convenient time to talk.\r\n\r\nBest,`;
   window.location.href = `mailto:${encodeURIComponent(lead.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
@@ -649,12 +652,14 @@ async function saveLead(event) {
     phone: String(values.get("phone") || "").trim() || null,
     date_of_birth: dateOfBirth,
     insurer: String(values.get("insurer") || ""),
+    insurance_type: String(values.get("insuranceType") || ""),
+    application_type: String(values.get("applicationType") || ""),
     policy_name: String(values.get("policyName") || "").trim(),
     notes: String(values.get("notes") || "").trim() || null,
     follow_up_date: String(values.get("followUpDate") || "") || null,
   };
-  if (!lead.full_name || !lead.insurer || !lead.policy_name) {
-    announce("Enter the lead name, insurer, and policy.", true);
+  if (!lead.full_name || !lead.insurer || !lead.insurance_type || !lead.application_type || !lead.policy_name) {
+    announce("Enter the lead name, insurer, insurance type, application type, and policy.", true);
     return;
   }
   submit.disabled = true;

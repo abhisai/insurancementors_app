@@ -13,6 +13,7 @@ PolicyDairy is a Vercel-hosted client and policy workspace backed by Supabase Au
    - `supabase/migrations/202611010002_policy_insurer_and_name.sql`
    - `supabase/migrations/202611010003_policy_dates_and_application_type.sql`
    - `supabase/migrations/202611010004_leads.sql`
+   - `supabase/migrations/202611010005_lead_insurance_and_application_types.sql`
 6. Create the first user from Supabase Authentication, then add that user as the workspace owner by running the SQL below with their Auth user UUID:
 
    ```sql
@@ -29,7 +30,7 @@ PolicyDairy is a Vercel-hosted client and policy workspace backed by Supabase Au
 
 The local `.env.local` is ignored by Git and must never be committed. Set the same two variables in Vercel's project environment-variable settings before deploying.
 
-The migrations create a single `agency` workspace with RLS enabled on all application tables, and add insurer, policy name, application type, applied date, and inception date fields, plus the shared Leads page. Lead age is calculated from date of birth and is not stored separately. Lead records, including date of birth, are visible to authorized members of the agency workspace. Existing policies are backfilled with insurer `Others`, policy name `Not specified`, and type `New`; edit those values as needed. Adding an invited user to the Auth project alone does **not** grant workspace access; the user must also have a `workspace_members` row.
+The migrations create a single `agency` workspace with RLS enabled on all application tables, and add insurer, policy name, application type, applied date, and inception date fields, plus the shared Leads page. Leads record insurance type (Health, Term, Travel, or Other) separately from application type (New or Port). Lead age is calculated from date of birth and is not stored separately. Lead records, including date of birth, are visible to authorized members of the agency workspace. Existing policies are backfilled with insurer `Others`, policy name `Not specified`, and type `New`; existing leads are backfilled with insurance type `Other` and application type `New`. Edit those values as needed. Adding an invited user to the Auth project alone does **not** grant workspace access; the user must also have a `workspace_members` row.
 
 ## Vercel deployment
 

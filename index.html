@@ -273,7 +273,7 @@
             <div class="table-wrap">
               <table>
                 <thead>
-                  <tr><th>LEAD</th><th>CONTACT</th><th>AGE / DOB</th><th>INSURER / POLICY</th><th>FOLLOW-UP</th><th></th></tr>
+                  <tr><th>LEAD</th><th>CONTACT</th><th>AGE / DOB</th><th>INSURANCE / POLICY</th><th>APPLICATION</th><th>FOLLOW-UP</th><th></th></tr>
                 </thead>
                 <tbody id="all-leads"></tbody>
               </table>
@@ -375,6 +375,16 @@
             <label class="field">Insurer <span>*</span>
               <select name="insurer" required>
                 <option>HDFC ERGO</option><option>ICICI Lombard</option><option>STAR</option><option>Aditya Birla</option><option>Care</option><option>Tata AIG</option><option>Tata AIA</option><option>Axis Maxlife</option><option>Others</option>
+              </select>
+            </label>
+            <label class="field">Insurance type <span>*</span>
+              <select name="insuranceType" required>
+                <option value="Health">Health insurance</option><option value="Term">Term insurance</option><option value="Travel">Travel insurance</option><option value="Other">Other</option>
+              </select>
+            </label>
+            <label class="field">Application type <span>*</span>
+              <select name="applicationType" required>
+                <option value="New">New</option><option value="Port">Port</option>
               </select>
             </label>
             <label class="field">Policy <span>*</span><input name="policyName" required maxlength="160" placeholder="e.g. Health insurance" /></label>
