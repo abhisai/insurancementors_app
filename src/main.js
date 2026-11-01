@@ -274,6 +274,23 @@ function renderRenewalRows(target, items, full = false) {
     : full ? "" : '<div class="empty-inline">No upcoming renewals.</div>';
 }
 
+function renderLeadFollowUps(target, items) {
+  target.innerHTML = items.length
+    ? items.map((lead) => {
+      const date = dateValue(lead.follow_up_date);
+      const day = date ? new Intl.DateTimeFormat(undefined, { day: "2-digit" }).format(date) : "–";
+      const month = date ? new Intl.DateTimeFormat(undefined, { month: "short" }).format(date).toUpperCase() : "TBD";
+      const days = daysUntil(lead.follow_up_date);
+      const timingClass = days !== null && days < 0 ? "renewal-days follow-up-overdue" : "renewal-days";
+      return `<div class="renewal-row">
+        <span class="date-tile follow-up-date-tile"><strong>${day}</strong><span>${month}</span></span>
+        <span class="renewal-copy"><strong>${safeText(lead.full_name)}</strong><span>${safeText(lead.insurer)} · ${safeText(lead.policy_name)}</span></span>
+        <span class="${timingClass}">${safeText(followUpLabel(lead.follow_up_date))}</span>
+      </div>`;
+    }).join("")
+    : '<div class="empty-inline">No upcoming or overdue lead follow-ups.</div>';
+}
+
 function followUpLabel(value) {
   const days = daysUntil(value);
   if (days === null) return "Not set";
@@ -311,6 +328,7 @@ function render() {
     const days = daysUntil(lead.follow_up_date);
     return days !== null && days <= 30;
   });
+  const dashboardLeadFollowUps = leadFollowUps.slice(0, 4);
   const activePolicies = clients.reduce((sum, client) =>
     sum + getPolicies(client).filter((policy) => policy.status === "active").length, 0);
   document.querySelector("#total-clients").textContent = clients.length;
@@ -323,6 +341,7 @@ function render() {
   document.querySelector("#lead-result-count").textContent = leads.length;
   document.querySelector("#renewal-result-count").textContent = renewals.length;
   renderRenewalRows(document.querySelector("#dashboard-renewals"), renewals.slice(0, 4));
+  renderLeadFollowUps(document.querySelector("#dashboard-lead-follow-ups"), dashboardLeadFollowUps);
   renderRenewalRows(document.querySelector("#all-renewals"), renewals, true);
   renderClientRows(document.querySelector("#recent-clients"), clients.slice(0, 4));
   renderClientRows(document.querySelector("#all-clients"), clients, true);

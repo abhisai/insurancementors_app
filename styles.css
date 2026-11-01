@@ -168,7 +168,7 @@ h1 { margin-bottom: 7px; color: #202b3b; font: 700 27px/1.25 "Manrope", sans-ser
 .status-dot { display: inline-block; flex: 0 0 auto; width: 6px; height: 6px; border-radius: 50%; }
 .green-dot { background: #4ab28d; }
 .amber-dot { background: #e4ab4a; }
-.content-grid { display: grid; grid-template-columns: minmax(0, 1.22fr) minmax(280px, .78fr); gap: 16px; margin-bottom: 18px; }
+.content-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; margin-bottom: 18px; }
 .card { padding: 18px 18px 14px; }
 .card-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
 .card-heading h2, .list-toolbar h2 { margin: 0 0 5px; color: #2c394b; font: 700 14px "Manrope", sans-serif; letter-spacing: -.25px; }
@@ -179,6 +179,7 @@ h1 { margin-bottom: 7px; color: #202b3b; font: 700 27px/1.25 "Manrope", sans-ser
 .renewal-list { margin-top: 16px; }
 .renewal-row { display: flex; align-items: center; gap: 11px; min-height: 54px; border-top: 1px solid #f0f2f5; }
 .date-tile { display: grid; place-content: center; flex: 0 0 37px; width: 37px; height: 39px; border-radius: 7px; color: #b27718; background: #fff5e3; text-align: center; }
+.follow-up-date-tile { color: #765fc0; background: #f2effc; }
 .date-tile strong { font: 700 13px "Manrope", sans-serif; line-height: 1.15; }
 .date-tile span { margin-top: 2px; font-size: 8px; font-weight: 700; letter-spacing: .6px; }
 .renewal-copy { flex: 1; min-width: 0; }
@@ -186,6 +187,7 @@ h1 { margin-bottom: 7px; color: #202b3b; font: 700 27px/1.25 "Manrope", sans-ser
 .renewal-copy strong { margin-bottom: 4px; color: #3d495b; font-size: 10px; font-weight: 600; }
 .renewal-copy span { color: #9aa4b1; font-size: 9px; }
 .renewal-days { color: #bd842e; font-size: 9px; white-space: nowrap; }
+.follow-up-overdue { color: #c65e5e; }
 .empty-inline { padding: 23px 4px; color: #97a1ae; font-size: 11px; text-align: center; }
 .activity-card { padding-bottom: 12px; }
 .sparkle { color: #e0ad53; font-size: 16px; }
@@ -301,7 +303,7 @@ tbody tr:last-child td { border-bottom: 0; }
   .sidebar { width: 220px; }
   .main-content { margin-left: 220px; }
   .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .content-grid { grid-template-columns: minmax(0, 1.1fr) minmax(250px, .9fr); }
+  .content-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 780px) {
   .sidebar { position: sticky; inset: 0 0 auto; width: 100%; height: auto; padding: 11px 15px; }
