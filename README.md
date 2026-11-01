@@ -15,6 +15,7 @@ PolicyDairy is a Vercel-hosted client and policy workspace backed by Supabase Au
    - `supabase/migrations/202611010004_leads.sql`
    - `supabase/migrations/202611010005_lead_insurance_and_application_types.sql`
    - `supabase/migrations/202611010006_client_lead_source.sql`
+   - `supabase/migrations/202611010007_policy_write_privileges.sql`
 6. Create the first user from Supabase Authentication, then add that user as the workspace owner by running the SQL below with their Auth user UUID:
 
    ```sql
