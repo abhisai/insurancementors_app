@@ -215,7 +215,7 @@
             <div class="table-wrap">
               <table>
                 <thead>
-                  <tr><th>CLIENT</th><th>POLICY</th><th>STATUS</th><th>NEXT RENEWAL</th><th></th></tr>
+                  <tr><th>CLIENT</th><th>SOURCE</th><th>POLICY</th><th>STATUS</th><th>NEXT RENEWAL</th><th></th></tr>
                 </thead>
                 <tbody id="recent-clients"></tbody>
               </table>
@@ -244,7 +244,7 @@
             <div class="table-wrap">
               <table>
                 <thead>
-                  <tr><th>CLIENT</th><th>CONTACT</th><th>POLICY</th><th>STATUS</th><th>NEXT RENEWAL</th><th></th></tr>
+                  <tr><th>CLIENT</th><th>CONTACT</th><th>SOURCE</th><th>POLICY</th><th>STATUS</th><th>NEXT RENEWAL</th><th></th></tr>
                 </thead>
                 <tbody id="all-clients"></tbody>
               </table>
@@ -273,7 +273,7 @@
             <div class="table-wrap">
               <table>
                 <thead>
-                  <tr><th>LEAD</th><th>CONTACT</th><th>AGE / DOB</th><th>INSURANCE / POLICY</th><th>APPLICATION</th><th>FOLLOW-UP</th><th></th></tr>
+                  <tr><th>LEAD</th><th>CONTACT</th><th>SOURCE</th><th>AGE / DOB</th><th>INSURANCE / POLICY</th><th>APPLICATION</th><th>FOLLOW-UP</th><th></th></tr>
                 </thead>
                 <tbody id="all-leads"></tbody>
               </table>
@@ -319,6 +319,7 @@
             <label class="field field-wide">Client name <span>*</span><input name="name" required maxlength="80" placeholder="e.g. Taylor Morgan" /></label>
             <label class="field">Email address<input name="email" type="email" maxlength="120" placeholder="taylor@example.com" /></label>
             <label class="field">Phone number<input name="phone" type="tel" maxlength="30" placeholder="+1 (555) 000-0000" /></label>
+            <label class="field field-wide">Source<input name="source" maxlength="160" placeholder="e.g. Referral, website, walk-in" /></label>
             <label class="field">Policy type
               <select name="policyType">
                 <option>Life insurance</option><option>Health insurance</option><option>Auto insurance</option><option>Home insurance</option><option>Business insurance</option><option>Other</option>
@@ -370,6 +371,7 @@
             <label class="field field-wide">Lead name <span>*</span><input name="name" required maxlength="160" autocomplete="name" placeholder="e.g. Taylor Morgan" /></label>
             <label class="field">Email address<input name="email" type="email" maxlength="254" autocomplete="email" placeholder="taylor@example.com" /></label>
             <label class="field">Phone number<input name="phone" type="tel" maxlength="40" autocomplete="tel" placeholder="+91 00000 00000" /></label>
+            <label class="field field-wide">Source<input name="source" maxlength="160" placeholder="e.g. Referral, website, walk-in" /></label>
             <label class="field">Date of birth<input name="dateOfBirth" type="date" /></label>
             <label class="field">Age<input name="age" type="text" readonly placeholder="Calculated from DOB" /></label>
             <label class="field">Insurer <span>*</span>

@@ -156,7 +156,7 @@ async function loadWorkspace(user) {
 async function loadClients() {
   const { data, error } = await supabase
     .from("clients")
-    .select("id, full_name, email, phone, notes, created_at, updated_at, policies(id, policy_type, insurer, policy_name, application_type, applied_date, inception_date, policy_reference, status, annual_premium, renewal_date)")
+    .select("id, full_name, email, phone, source, notes, created_at, updated_at, policies(id, policy_type, insurer, policy_name, application_type, applied_date, inception_date, policy_reference, status, annual_premium, renewal_date)")
     .order("full_name", { ascending: true });
   if (error) throw error;
   clients.splice(0, clients.length, ...(data || []));
@@ -166,7 +166,7 @@ async function loadClients() {
 async function loadLeads() {
   const { data, error } = await supabase
     .from("leads")
-    .select("id, full_name, email, phone, date_of_birth, insurer, insurance_type, application_type, policy_name, notes, follow_up_date, created_at, updated_at")
+    .select("id, full_name, email, phone, source, date_of_birth, insurer, insurance_type, application_type, policy_name, notes, follow_up_date, created_at, updated_at")
     .order("follow_up_date", { ascending: true, nullsFirst: false })
     .order("full_name", { ascending: true });
   if (error) throw error;
@@ -236,6 +236,7 @@ function renderClientRows(target, items, includeContact = false) {
     return `<tr>
       <td>${renderClientIdentity(client)}</td>
       ${includeContact ? `<td>${safeText(client.phone || "—")}</td>` : ""}
+      <td>${safeText(client.source || "—")}</td>
       <td>${policyMarkup(client)}</td>
       <td>${statusMarkup(client)}</td>
       <td>${formatDate(nextRenewal)}</td>
@@ -288,6 +289,7 @@ function renderLeadRows(target, items) {
     return `<tr>
       <td><span class="client-person"><span class="client-avatar lavender">${safeText(initialsFor(lead.full_name))}</span><span class="client-name">${safeText(lead.full_name)}</span></span></td>
       <td>${safeText(lead.phone || "—")}${lead.email ? `<span class="client-sub">${safeText(lead.email)}</span>` : ""}</td>
+      <td>${safeText(lead.source || "—")}</td>
       <td>${age === "" ? "—" : safeText(age)}<span class="client-sub">${formatDate(lead.date_of_birth, { month: "short", day: "numeric", year: "numeric" })}</span></td>
       <td><span class="policy-name">${safeText(lead.insurer)}</span><span class="policy-ref">${safeText(lead.insurance_type)} insurance · ${safeText(lead.policy_name)}</span></td>
       <td>${safeText(lead.application_type)}</td>
@@ -336,7 +338,7 @@ function filterClients(query) {
   const filtered = clients.filter((client) => {
     const policyText = getPolicies(client).map((policy) =>
       `${policy.policy_type} ${policy.insurer} ${policy.policy_name} ${policy.application_type} ${policy.policy_reference || ""}`).join(" ");
-    return [client.full_name, client.email, client.phone, client.notes, policyText]
+    return [client.full_name, client.email, client.phone, client.source, client.notes, policyText]
       .some((value) => String(value || "").toLowerCase().includes(normalized));
   });
   renderClientRows(document.querySelector("#all-clients"), filtered, true);
@@ -347,7 +349,7 @@ function filterClients(query) {
 function filterLeads(query) {
   const normalized = query.trim().toLowerCase();
   const filtered = leads.filter((lead) =>
-    [lead.full_name, lead.email, lead.phone, lead.insurer, lead.insurance_type, lead.application_type, lead.policy_name, lead.notes, lead.date_of_birth, lead.follow_up_date]
+    [lead.full_name, lead.email, lead.phone, lead.source, lead.insurer, lead.insurance_type, lead.application_type, lead.policy_name, lead.notes, lead.date_of_birth, lead.follow_up_date]
       .some((value) => String(value || "").toLowerCase().includes(normalized)));
   renderLeadRows(document.querySelector("#all-leads"), filtered);
   document.querySelector("#lead-result-count").textContent = filtered.length;
@@ -376,6 +378,7 @@ function openModal(client = null) {
   form.elements.name.value = client?.full_name || "";
   form.elements.email.value = client?.email || "";
   form.elements.phone.value = client?.phone || "";
+  form.elements.source.value = client?.source || "";
   form.elements.notes.value = client?.notes || "";
   const policy = client ? primaryPolicy(client) : null;
   form.elements.policyType.value = policy?.policy_type || "Life insurance";
@@ -408,6 +411,7 @@ function openLeadModal(lead = null) {
   form.elements.name.value = lead?.full_name || "";
   form.elements.email.value = lead?.email || "";
   form.elements.phone.value = lead?.phone || "";
+  form.elements.source.value = lead?.source || "";
   form.elements.dateOfBirth.value = lead?.date_of_birth || "";
   const age = ageFromDateOfBirth(lead?.date_of_birth);
   form.elements.age.value = age === "" ? "" : age;
@@ -582,6 +586,7 @@ function formValues(form) {
     p_full_name: String(values.get("name") || "").trim(),
     p_email: String(values.get("email") || "").trim() || null,
     p_phone: String(values.get("phone") || "").trim() || null,
+    p_source: String(values.get("source") || "").trim() || null,
     p_notes: String(values.get("notes") || "").trim() || null,
     p_policy_type: String(values.get("policyType") || "Other"),
     p_insurer: String(values.get("insurer") || "Others"),
@@ -650,6 +655,7 @@ async function saveLead(event) {
     full_name: String(values.get("name") || "").trim(),
     email: String(values.get("email") || "").trim() || null,
     phone: String(values.get("phone") || "").trim() || null,
+    source: String(values.get("source") || "").trim() || null,
     date_of_birth: dateOfBirth,
     insurer: String(values.get("insurer") || ""),
     insurance_type: String(values.get("insuranceType") || ""),
