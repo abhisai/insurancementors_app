@@ -78,6 +78,11 @@
             <span>Clients</span>
             <span class="nav-count" id="client-nav-count">0</span>
           </button>
+          <button class="nav-item" type="button" data-view="leads">
+            <span class="nav-icon" aria-hidden="true">♧</span>
+            <span>Leads</span>
+            <span class="nav-count" id="lead-nav-count">0</span>
+          </button>
           <button class="nav-item" type="button" data-view="renewals">
             <span class="nav-icon" aria-hidden="true">◷</span>
             <span>Renewals</span>
@@ -182,6 +187,11 @@
                 <span><strong>Add a new client</strong><small>Start a client record</small></span>
                 <span class="quick-arrow" aria-hidden="true">→</span>
               </button>
+              <button class="quick-action" type="button" data-open-lead>
+                <span class="quick-icon quick-blue" aria-hidden="true">♧</span>
+                <span><strong>Add a new lead</strong><small>Track a prospect and follow-up</small></span>
+                <span class="quick-arrow" aria-hidden="true">→</span>
+              </button>
               <button class="quick-action" type="button" data-view-link="renewals">
                 <span class="quick-icon quick-amber" aria-hidden="true">◷</span>
                 <span><strong>Review renewals</strong><small>See upcoming policy dates</small></span>
@@ -240,6 +250,36 @@
               </table>
             </div>
             <p class="empty-state" id="no-search-results" hidden>No clients match your search.</p>
+          </section>
+        </section>
+
+        <section class="view-panel" id="leads-view" aria-labelledby="leads-title" hidden>
+          <div class="page-heading">
+            <div>
+              <p class="eyebrow">GROW YOUR CLIENT BOOK</p>
+              <h1 id="leads-title">Leads</h1>
+              <p class="page-subtitle">Keep prospect details and follow-ups in one place.</p>
+            </div>
+            <button class="button button-primary" type="button" data-open-lead><span class="button-plus" aria-hidden="true">+</span> Add a lead</button>
+          </div>
+          <section class="card full-list-card">
+            <div class="list-toolbar">
+              <div><h2>All leads <span class="result-count" id="lead-result-count">0</span></h2><p>Shared agency records</p></div>
+              <label class="search-box">
+                <span aria-hidden="true">⌕</span>
+                <input id="lead-search" type="search" placeholder="Search leads..." autocomplete="off" />
+              </label>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>LEAD</th><th>CONTACT</th><th>AGE / DOB</th><th>INSURER / POLICY</th><th>FOLLOW-UP</th><th></th></tr>
+                </thead>
+                <tbody id="all-leads"></tbody>
+              </table>
+            </div>
+            <p class="empty-state" id="no-leads" hidden>No leads yet. Add a lead to get started.</p>
+            <p class="empty-state" id="no-lead-search-results" hidden>No leads match your search.</p>
           </section>
         </section>
 
@@ -310,6 +350,40 @@
           <div class="modal-actions">
             <button class="button button-secondary" type="button" data-close-modal>Cancel</button>
             <button class="button button-primary" type="submit">Save client</button>
+          </div>
+        </form>
+      </section>
+    </div>
+
+    <div class="modal-backdrop" id="lead-modal" hidden>
+      <section class="modal" role="dialog" aria-modal="true" aria-labelledby="lead-modal-title">
+        <div class="modal-heading">
+          <div>
+            <p class="eyebrow">LEAD RECORD</p>
+            <h2 id="lead-modal-title">Add a lead</h2>
+          </div>
+          <button class="icon-button lead-modal-close" type="button" data-close-lead-modal aria-label="Close dialog">×</button>
+        </div>
+        <p class="modal-notice">Lead details are shared with authorized members of your agency workspace.</p>
+        <form id="lead-form">
+          <div class="form-grid">
+            <label class="field field-wide">Lead name <span>*</span><input name="name" required maxlength="160" autocomplete="name" placeholder="e.g. Taylor Morgan" /></label>
+            <label class="field">Email address<input name="email" type="email" maxlength="254" autocomplete="email" placeholder="taylor@example.com" /></label>
+            <label class="field">Phone number<input name="phone" type="tel" maxlength="40" autocomplete="tel" placeholder="+91 00000 00000" /></label>
+            <label class="field">Date of birth<input name="dateOfBirth" type="date" /></label>
+            <label class="field">Age<input name="age" type="text" readonly placeholder="Calculated from DOB" /></label>
+            <label class="field">Insurer <span>*</span>
+              <select name="insurer" required>
+                <option>HDFC ERGO</option><option>ICICI Lombard</option><option>STAR</option><option>Aditya Birla</option><option>Care</option><option>Tata AIG</option><option>Tata AIA</option><option>Axis Maxlife</option><option>Others</option>
+              </select>
+            </label>
+            <label class="field">Policy <span>*</span><input name="policyName" required maxlength="160" placeholder="e.g. Health insurance" /></label>
+            <label class="field field-wide">Follow-up date<input name="followUpDate" type="date" /></label>
+            <label class="field field-wide">Notes<textarea name="notes" rows="3" maxlength="4000" placeholder="Optional notes"></textarea></label>
+          </div>
+          <div class="modal-actions">
+            <button class="button button-secondary" type="button" data-close-lead-modal>Cancel</button>
+            <button class="button button-primary" type="submit">Save lead</button>
           </div>
         </form>
       </section>

@@ -1,16 +1,19 @@
 import { supabase, supabaseConfigReady } from "./supabase.js";
 
 const clients = [];
+const leads = [];
 const palette = ["lavender", "mint", "peach", "blue", "rose"];
 const panels = {
   dashboard: document.querySelector("#dashboard-view"),
   clients: document.querySelector("#clients-view"),
+  leads: document.querySelector("#leads-view"),
   renewals: document.querySelector("#renewals-view"),
 };
 const authScreen = document.querySelector("#auth-screen");
 const appShell = document.querySelector("#app-shell");
 const authMessage = document.querySelector("#auth-message");
 const modal = document.querySelector("#client-modal");
+const leadModal = document.querySelector("#lead-modal");
 const toast = document.querySelector("#toast");
 let currentUser = null;
 let workspaceId = null;
@@ -28,6 +31,18 @@ function localDateInputValue(date = new Date()) {
   const month = String(date.getMonth() + 1).padStart(2, "0");
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
+}
+
+function ageFromDateOfBirth(value) {
+  const birthDate = dateValue(value);
+  if (!birthDate) return "";
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  if (today.getMonth() < birthDate.getMonth()
+    || (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())) {
+    age -= 1;
+  }
+  return age >= 0 ? age : "";
 }
 
 function formatDate(value, options = { month: "short", day: "numeric", year: "numeric" }) {
@@ -95,6 +110,8 @@ function displaySignIn(message = "") {
   currentUser = null;
   workspaceId = null;
   workspaceRole = null;
+  clients.splice(0, clients.length);
+  leads.splice(0, leads.length);
   appShell.hidden = true;
   authScreen.hidden = false;
   document.querySelector("#login-form").hidden = false;
@@ -146,11 +163,23 @@ async function loadClients() {
   render();
 }
 
+async function loadLeads() {
+  const { data, error } = await supabase
+    .from("leads")
+    .select("id, full_name, email, phone, date_of_birth, insurer, policy_name, notes, follow_up_date, created_at, updated_at")
+    .order("follow_up_date", { ascending: true, nullsFirst: false })
+    .order("full_name", { ascending: true });
+  if (error) throw error;
+  leads.splice(0, leads.length, ...(data || []));
+}
+
 async function showWorkspace(user) {
   currentUser = user;
   try {
     await loadWorkspace(user);
     await loadClients();
+    await loadLeads();
+    render();
     authScreen.hidden = true;
     appShell.hidden = false;
     updateUserDisplay(user);
@@ -244,24 +273,61 @@ function renderRenewalRows(target, items, full = false) {
     : full ? "" : '<div class="empty-inline">No upcoming renewals.</div>';
 }
 
+function followUpLabel(value) {
+  const days = daysUntil(value);
+  if (days === null) return "Not set";
+  if (days < 0) return `Overdue by ${Math.abs(days)} days`;
+  if (days === 0) return "Today";
+  if (days === 1) return "Tomorrow";
+  return `${days} days · ${formatDate(value, { month: "short", day: "numeric" })}`;
+}
+
+function renderLeadRows(target, items) {
+  target.innerHTML = items.map((lead) => {
+    const age = ageFromDateOfBirth(lead.date_of_birth);
+    return `<tr>
+      <td><span class="client-person"><span class="client-avatar lavender">${safeText(initialsFor(lead.full_name))}</span><span class="client-name">${safeText(lead.full_name)}</span></span></td>
+      <td>${safeText(lead.phone || "—")}${lead.email ? `<span class="client-sub">${safeText(lead.email)}</span>` : ""}</td>
+      <td>${age === "" ? "—" : safeText(age)}<span class="client-sub">${formatDate(lead.date_of_birth, { month: "short", day: "numeric", year: "numeric" })}</span></td>
+      <td><span class="policy-name">${safeText(lead.insurer)}</span><span class="policy-ref">${safeText(lead.policy_name)}</span></td>
+      <td><span class="${daysUntil(lead.follow_up_date) !== null && daysUntil(lead.follow_up_date) < 0 ? "lead-overdue" : ""}">${followUpLabel(lead.follow_up_date)}</span></td>
+      <td><span class="row-actions">
+        <button class="row-action" type="button" data-edit-lead="${safeText(lead.id)}">Edit</button>
+        ${lead.email ? `<button class="row-action" type="button" data-email-lead="${safeText(lead.id)}">Email</button>` : ""}
+        ${lead.follow_up_date ? `<button class="row-action" type="button" data-calendar-lead="${safeText(lead.id)}">Calendar</button>` : ""}
+        ${workspaceRole === "owner" ? `<button class="row-action delete-action" type="button" data-delete-lead="${safeText(lead.id)}">Delete</button>` : ""}
+      </span></td>
+    </tr>`;
+  }).join("");
+}
+
 function render() {
   const renewals = allRenewals();
   const next30 = renewals.filter((item) => daysUntil(item.policy.renewal_date) <= 30);
+  const leadFollowUps = leads.filter((lead) => {
+    const days = daysUntil(lead.follow_up_date);
+    return days !== null && days <= 30;
+  });
   const activePolicies = clients.reduce((sum, client) =>
     sum + getPolicies(client).filter((policy) => policy.status === "active").length, 0);
   document.querySelector("#total-clients").textContent = clients.length;
   document.querySelector("#active-policies").textContent = activePolicies;
   document.querySelector("#upcoming-renewals").textContent = next30.length;
-  document.querySelector("#follow-ups").textContent = next30.length;
+  document.querySelector("#follow-ups").textContent = next30.length + leadFollowUps.length;
   document.querySelector("#client-nav-count").textContent = clients.length;
+  document.querySelector("#lead-nav-count").textContent = leads.length;
   document.querySelector("#client-result-count").textContent = clients.length;
+  document.querySelector("#lead-result-count").textContent = leads.length;
   document.querySelector("#renewal-result-count").textContent = renewals.length;
   renderRenewalRows(document.querySelector("#dashboard-renewals"), renewals.slice(0, 4));
   renderRenewalRows(document.querySelector("#all-renewals"), renewals, true);
   renderClientRows(document.querySelector("#recent-clients"), clients.slice(0, 4));
   renderClientRows(document.querySelector("#all-clients"), clients, true);
+  renderLeadRows(document.querySelector("#all-leads"), leads);
   document.querySelector("#no-renewals").hidden = renewals.length > 0;
+  document.querySelector("#no-leads").hidden = leads.length > 0;
   filterClients(document.querySelector("#client-search").value);
+  filterLeads(document.querySelector("#lead-search").value);
 }
 
 function filterClients(query) {
@@ -277,6 +343,16 @@ function filterClients(query) {
   document.querySelector("#no-search-results").hidden = filtered.length > 0 || !normalized;
 }
 
+function filterLeads(query) {
+  const normalized = query.trim().toLowerCase();
+  const filtered = leads.filter((lead) =>
+    [lead.full_name, lead.email, lead.phone, lead.insurer, lead.policy_name, lead.notes, lead.date_of_birth, lead.follow_up_date]
+      .some((value) => String(value || "").toLowerCase().includes(normalized)));
+  renderLeadRows(document.querySelector("#all-leads"), filtered);
+  document.querySelector("#lead-result-count").textContent = filtered.length;
+  document.querySelector("#no-lead-search-results").hidden = filtered.length > 0 || !normalized;
+}
+
 function showView(name) {
   if (!panels[name]) return;
   Object.entries(panels).forEach(([key, panel]) => {
@@ -285,7 +361,7 @@ function showView(name) {
     panel.classList.toggle("active", active);
   });
   document.querySelectorAll(".nav-item").forEach((item) => item.classList.toggle("active", item.dataset.view === name));
-  const labels = { dashboard: "Overview", clients: "Clients", renewals: "Renewals" };
+  const labels = { dashboard: "Overview", clients: "Clients", leads: "Leads", renewals: "Renewals" };
   document.querySelector("#breadcrumb-current").textContent = labels[name];
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
@@ -322,42 +398,92 @@ function closeModal() {
   document.querySelector("#client-form").reset();
 }
 
+function openLeadModal(lead = null) {
+  const form = document.querySelector("#lead-form");
+  form.reset();
+  document.querySelector("#lead-modal-title").textContent = lead ? "Edit lead" : "Add a lead";
+  form.querySelector('button[type="submit"]').textContent = lead ? "Save changes" : "Save lead";
+  form.dataset.leadId = lead?.id || "";
+  form.elements.name.value = lead?.full_name || "";
+  form.elements.email.value = lead?.email || "";
+  form.elements.phone.value = lead?.phone || "";
+  form.elements.dateOfBirth.value = lead?.date_of_birth || "";
+  const age = ageFromDateOfBirth(lead?.date_of_birth);
+  form.elements.age.value = age === "" ? "" : age;
+  form.elements.insurer.value = lead?.insurer || "Others";
+  form.elements.policyName.value = lead?.policy_name || "";
+  form.elements.followUpDate.value = lead?.follow_up_date || "";
+  form.elements.notes.value = lead?.notes || "";
+  form.elements.dateOfBirth.max = localDateInputValue();
+  leadModal.hidden = false;
+  form.elements.name.focus();
+}
+
+function closeLeadModal() {
+  leadModal.hidden = true;
+  document.querySelector("#lead-form").reset();
+}
+
 function escapeCalendarText(value) {
   return String(value).replace(/\\/g, "\\\\").replace(/\n/g, "\\n").replace(/,/g, "\\,").replace(/;/g, "\\;");
 }
 
-function downloadCalendar(items) {
-  const withDates = items.filter((item) => dateValue(item.policy.renewal_date));
-  if (!withDates.length) {
-    announce("There are no upcoming renewal dates to add.");
+function downloadCalendarFile(events, filename, emptyMessage) {
+  if (!events.length) {
+    announce(emptyMessage);
     return;
   }
-  const timestamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
-  const events = withDates.flatMap((item) => {
-    const dateStamp = item.policy.renewal_date.replace(/-/g, "");
-    const [year, month, day] = item.policy.renewal_date.split("-").map(Number);
-    const end = new Date(Date.UTC(year, month - 1, day + 1)).toISOString().slice(0, 10).replace(/-/g, "");
-    return [
-      "BEGIN:VEVENT",
-      `UID:coverdesk-${item.policy.id}-${dateStamp}@workspace.invalid`,
-      `DTSTAMP:${timestamp}`,
-      `DTSTART;VALUE=DATE:${dateStamp}`,
-      `DTEND;VALUE=DATE:${end}`,
-      `SUMMARY:${escapeCalendarText(`Policy renewal: ${item.full_name}`)}`,
-      `DESCRIPTION:${escapeCalendarText(`${item.policy.insurer} ${item.policy.policy_name} renewal follow-up. Reference: ${item.policy.policy_reference || "not provided"}.`)}`,
-      "END:VEVENT",
-    ];
-  });
-  const body = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//PolicyDairy//Workspace//EN", "CALSCALE:GREGORIAN", ...events, "END:VCALENDAR", ""].join("\r\n");
+  const body = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//PolicyDairy//Workspace//EN", "CALSCALE:GREGORIAN", ...events.flat(), "END:VCALENDAR", ""].join("\r\n");
   const url = URL.createObjectURL(new Blob([body], { type: "text/calendar;charset=utf-8" }));
   const link = document.createElement("a");
   link.href = url;
-  link.download = "policydairy-renewals.ics";
+  link.download = filename;
   document.body.append(link);
   link.click();
   link.remove();
   URL.revokeObjectURL(url);
-  announce(`${withDates.length} reminder${withDates.length === 1 ? "" : "s"} downloaded. Import the .ics file into your calendar.`);
+  announce(`${events.length} reminder${events.length === 1 ? "" : "s"} downloaded. Import the .ics file into your calendar.`);
+}
+
+function calendarEvent({ id, date, summary, description }) {
+  const dateStamp = date.replace(/-/g, "");
+  const [year, month, day] = date.split("-").map(Number);
+  const end = new Date(Date.UTC(year, month - 1, day + 1)).toISOString().slice(0, 10).replace(/-/g, "");
+  return [
+    "BEGIN:VEVENT",
+    `UID:policydairy-${id}-${dateStamp}@workspace.invalid`,
+    `DTSTAMP:${new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "")}`,
+    `DTSTART;VALUE=DATE:${dateStamp}`,
+    `DTEND;VALUE=DATE:${end}`,
+    `SUMMARY:${escapeCalendarText(summary)}`,
+    `DESCRIPTION:${escapeCalendarText(description)}`,
+    "END:VEVENT",
+  ];
+}
+
+function downloadCalendar(items) {
+  const withDates = items.filter((item) => dateValue(item.policy.renewal_date));
+  const events = withDates.map((item) => calendarEvent({
+    id: item.policy.id,
+    date: item.policy.renewal_date,
+    summary: `Policy renewal: ${item.full_name}`,
+    description: `${item.policy.insurer} ${item.policy.policy_name} renewal follow-up. Reference: ${item.policy.policy_reference || "not provided"}.`,
+  }));
+  downloadCalendarFile(events, "policydairy-renewals.ics", "There are no upcoming renewal dates to add.");
+}
+
+function downloadLeadCalendar(lead) {
+  if (!dateValue(lead.follow_up_date)) {
+    announce("Add a follow-up date to this lead first.", true);
+    return;
+  }
+  const events = [calendarEvent({
+    id: lead.id,
+    date: lead.follow_up_date,
+    summary: `Lead follow-up: ${lead.full_name}`,
+    description: `${lead.insurer} ${lead.policy_name} follow-up.`,
+  })];
+  downloadCalendarFile(events, "policydairy-lead-follow-up.ics", "Add a follow-up date to this lead first.");
 }
 
 function emailClient(client) {
@@ -370,6 +496,17 @@ function emailClient(client) {
   const renewal = policy?.renewal_date ? formatDate(policy.renewal_date) : "upcoming policy date";
   const body = `Hi ${client.full_name.split(" ")[0]},\r\n\r\nI wanted to get in touch about your ${policy?.insurer || ""} ${policy?.policy_name || "insurance policy"} renewal on ${renewal}. Let me know a convenient time to talk.\r\n\r\nBest,`;
   window.location.href = `mailto:${encodeURIComponent(client.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+}
+
+function emailLead(lead) {
+  if (!lead.email) {
+    announce("Add an email address to this lead first.", true);
+    return;
+  }
+  const followUp = lead.follow_up_date ? formatDate(lead.follow_up_date) : "soon";
+  const subject = `Following up about ${lead.policy_name}`;
+  const body = `Hi ${lead.full_name.split(" ")[0]},\r\n\r\nI wanted to follow up about ${lead.insurer} ${lead.policy_name}${lead.follow_up_date ? ` on ${followUp}` : ""}. Let me know a convenient time to talk.\r\n\r\nBest,`;
+  window.location.href = `mailto:${encodeURIComponent(lead.email)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
 }
 
 async function handleLogin(event) {
@@ -495,6 +632,65 @@ async function deleteClient(client) {
   }
 }
 
+async function saveLead(event) {
+  event.preventDefault();
+  const form = event.currentTarget;
+  const submit = form.querySelector('button[type="submit"]');
+  const values = new FormData(form);
+  const dateOfBirth = String(values.get("dateOfBirth") || "") || null;
+  if (dateOfBirth && dateOfBirth > localDateInputValue()) {
+    announce("Date of birth cannot be in the future.", true);
+    form.elements.dateOfBirth.focus();
+    return;
+  }
+  const lead = {
+    full_name: String(values.get("name") || "").trim(),
+    email: String(values.get("email") || "").trim() || null,
+    phone: String(values.get("phone") || "").trim() || null,
+    date_of_birth: dateOfBirth,
+    insurer: String(values.get("insurer") || ""),
+    policy_name: String(values.get("policyName") || "").trim(),
+    notes: String(values.get("notes") || "").trim() || null,
+    follow_up_date: String(values.get("followUpDate") || "") || null,
+  };
+  if (!lead.full_name || !lead.insurer || !lead.policy_name) {
+    announce("Enter the lead name, insurer, and policy.", true);
+    return;
+  }
+  submit.disabled = true;
+  try {
+    const leadId = form.dataset.leadId || null;
+    let result;
+    if (leadId) {
+      result = await supabase.from("leads").update(lead).eq("id", leadId).select("id").single();
+    } else {
+      result = await supabase.from("leads").insert({ ...lead, workspace_id: workspaceId }).select("id").single();
+    }
+    if (result.error) throw result.error;
+    closeLeadModal();
+    await loadLeads();
+    render();
+    announce(leadId ? "Lead details updated." : "Lead added to your workspace.");
+  } catch (error) {
+    reportError("Could not save lead", error);
+  } finally {
+    submit.disabled = false;
+  }
+}
+
+async function deleteLead(lead) {
+  if (!window.confirm(`Permanently delete the lead for ${lead.full_name}? This cannot be undone.`)) return;
+  try {
+    const { error } = await supabase.from("leads").delete().eq("id", lead.id);
+    if (error) throw error;
+    await loadLeads();
+    render();
+    announce("Lead deleted.");
+  } catch (error) {
+    reportError("Could not delete lead", error);
+  }
+}
+
 function bindEvents() {
   document.querySelectorAll(".nav-item").forEach((item) =>
     item.addEventListener("click", () => showView(item.dataset.view)));
@@ -504,7 +700,16 @@ function bindEvents() {
     button.addEventListener("click", () => openModal()));
   document.querySelectorAll("[data-close-modal]").forEach((button) =>
     button.addEventListener("click", closeModal));
+  document.querySelectorAll("[data-open-lead]").forEach((button) =>
+    button.addEventListener("click", () => openLeadModal()));
+  document.querySelectorAll("[data-close-lead-modal]").forEach((button) =>
+    button.addEventListener("click", closeLeadModal));
   document.querySelector("#client-search").addEventListener("input", (event) => filterClients(event.target.value));
+  document.querySelector("#lead-search").addEventListener("input", (event) => filterLeads(event.target.value));
+  document.querySelector("#lead-form").addEventListener("submit", saveLead);
+  document.querySelector("#lead-form").elements.dateOfBirth.addEventListener("input", (event) => {
+    document.querySelector("#lead-form").elements.age.value = ageFromDateOfBirth(event.target.value);
+  });
   document.querySelector("#dismiss-notice").addEventListener("click", () => {
     document.querySelector(".demo-notice").hidden = true;
   });
@@ -528,10 +733,28 @@ function bindEvents() {
   modal.addEventListener("click", (event) => {
     if (event.target === modal) closeModal();
   });
+  leadModal.addEventListener("click", (event) => {
+    if (event.target === leadModal) closeLeadModal();
+  });
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && !modal.hidden) closeModal();
+    if (event.key === "Escape" && !leadModal.hidden) closeLeadModal();
   });
   document.addEventListener("click", (event) => {
+    const leadAction = event.target.closest("[data-edit-lead], [data-email-lead], [data-calendar-lead], [data-delete-lead]");
+    if (leadAction) {
+      const leadId = leadAction.dataset.editLead
+        || leadAction.dataset.emailLead
+        || leadAction.dataset.calendarLead
+        || leadAction.dataset.deleteLead;
+      const lead = leads.find((item) => item.id === leadId);
+      if (!lead) return;
+      if (leadAction.hasAttribute("data-edit-lead")) openLeadModal(lead);
+      if (leadAction.hasAttribute("data-email-lead")) emailLead(lead);
+      if (leadAction.hasAttribute("data-calendar-lead")) downloadLeadCalendar(lead);
+      if (leadAction.hasAttribute("data-delete-lead")) void deleteLead(lead);
+      return;
+    }
     const target = event.target.closest("[data-email], [data-calendar], [data-edit], [data-delete]");
     if (!target) return;
     const client = clients.find((item) => item.id === target.dataset.email || item.id === target.dataset.calendar || item.id === target.dataset.edit || item.id === target.dataset.delete);
